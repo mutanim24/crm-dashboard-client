@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContactById, editContact, removeContact } from '../../store/contactSlice';
-import { initiateCall } from '../../store/integrationSlice';
+import { initiateCall, simulateWebhook } from '../../store/integrationSlice';
 import Button from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
 import Modal from '../../components/Modal/Modal';
@@ -12,7 +12,6 @@ import LoadingSpinner from '../../components/LoadingSpinner/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import ActivityItem from '../../components/ActivityItem/ActivityItem';
 import toast, { Toaster } from 'react-hot-toast';
-import { simulateKixieWebhook } from '../../services/api';
 
 const ContactDetailPage = () => {
   const { id } = useParams();
@@ -129,18 +128,20 @@ const ContactDetailPage = () => {
     setIsSimulatingWebhook(true);
     
     toast.promise(
-      simulateKixieWebhook(selectedContact.id).unwrap(),
+      dispatch(simulateWebhook(selectedContact.id)),
       {
         loading: 'Simulating Kixie webhook...',
-        success: 'Kixie webhook simulated successfully! Check the activity timeline.',
+      success: () => {
+          // Refresh contact data to show the new activity
+          dispatch(fetchContactById(selectedContact.id));
+          return 'Kixie webhook simulated successfully! Check the activity timeline.';
+        },
         error: (err) => {
           return err.response?.data?.message || err.message || 'Failed to simulate webhook.';
         },
       }
     ).finally(() => {
       setIsSimulatingWebhook(false);
-      // Refresh contact data to show the new activity
-      dispatch(fetchContactById(selectedContact.id));
     });
   };
   
@@ -272,7 +273,7 @@ const ContactDetailPage = () => {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            {isSimulatingWebhook ? 'Simulating...' : 'Simulate Kixie Webhook'}
+            {isSimulatingWebhook ? 'Simulating...' : 'Simulate Inbound Activity'}
           </Button>
           <Button
             onClick={() => setShowDeleteConfirm(true)}
@@ -385,6 +386,91 @@ const ContactDetailPage = () => {
                   </a>
                 </div>
               )}
+            </div>
+          </Card>
+          
+          {/* Communications Card */}
+          <Card title="Kixie Communications Tester">
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={handleCallClick}
+                  variant="primary"
+                  disabled={!selectedContact || !selectedContact.phone}
+                  className="flex items-center"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                  Call
+                </Button>
+                
+                <Button
+                  onClick={() => setIsSmsModalOpen(true)}
+                  variant="primary"
+                  disabled={!selectedContact || !selectedContact.phone}
+                  className="flex items-center"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    />
+                  </svg>
+                  Send SMS
+                </Button>
+                
+                <Button
+                  onClick={handleSimulateWebhook}
+                  variant="outline"
+                  disabled={!selectedContact || isSimulatingWebhook}
+                  className="flex items-center"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  {isSimulatingWebhook ? 'Simulating...' : 'Simulate Inbound Activity'}
+                </Button>
+              </div>
+              
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                <p className="font-medium mb-1">Communication Tester Features:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Call: Initiate a call through Kixie integration</li>
+                  <li>Send SMS: Send a text message to the contact</li>
+                  <li>Simulate Inbound Activity: Test the activity timeline by creating a simulated call record</li>
+                </ul>
+              </div>
             </div>
           </Card>
           

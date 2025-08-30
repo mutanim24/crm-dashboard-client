@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { editContact, removeContact } from '../../store/contactSlice';
+import { getContactActivities } from '../../services/contactService';
 import Button from '../Button/Button';
 import Card from '../Card/Card';
 import Modal from '../Modal/Modal';
 import ContactForm from '../ContactForm/ContactForm';
+import ActivityItem from '../ActivityItem/ActivityItem';
 import toast, { Toaster } from 'react-hot-toast';
 
 const ContactDetailView = ({ contact, onBackToList }) => {
@@ -16,6 +18,31 @@ const ContactDetailView = ({ contact, onBackToList }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+  const [activitiesError, setActivitiesError] = useState(null);
+  
+  // Fetch activities when contact is loaded
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (contact && contact.id) {
+        setIsLoadingActivities(true);
+        setActivitiesError(null);
+        try {
+          const activitiesData = await getContactActivities(contact.id);
+          setActivities(activitiesData);
+        } catch (error) {
+          console.error('Error fetching activities:', error);
+          setActivitiesError('Failed to load activities');
+          setActivities([]);
+        } finally {
+          setIsLoadingActivities(false);
+        }
+      }
+    };
+    
+    fetchActivities();
+  }, [contact]);
   
   const handleEditContact = async (contactData) => {
     setIsEditing(true);
@@ -220,12 +247,18 @@ const ContactDetailView = ({ contact, onBackToList }) => {
                 {contact.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                    style={{ backgroundColor: tag.color || '#3B82F6' }}
                   >
-                    {tag}
+                    {tag.name}
                   </span>
                 ))}
               </div>
+            </Card>
+          )}
+          {contact.tags && contact.tags.length === 0 && (
+            <Card title="Tags">
+              <p className="text-gray-500 text-sm">No tags assigned</p>
             </Card>
           )}
           
@@ -277,31 +310,28 @@ const ContactDetailView = ({ contact, onBackToList }) => {
             </Card>
           )}
           
-          {/* Timeline */}
-          {contact.activities && contact.activities.length > 0 && (
-            <Card title="Recent Activity">
-              <div className="space-y-4">
-                {contact.activities.slice(0, 3).map((activity, index) => (
-                  <div key={index} className="flex">
-                    <div className="flex-shrink-0 mr-3">
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium">
-                        {activity.type.charAt(0)}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900">{activity.description}</p>
-                      <p className="text-xs text-gray-500">{formatDate(activity.created_at)}</p>
-                    </div>
-                  </div>
-                ))}
-                {contact.activities.length > 3 && (
-                  <p className="text-sm text-gray-500">
-                    +{contact.activities.length - 3} more activities
-                  </p>
-                )}
+          {/* Activity Timeline */}
+          <Card title="Activity Timeline">
+            {isLoadingActivities ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
-            </Card>
-          )}
+            ) : activitiesError ? (
+              <div className="text-center py-4">
+                <p className="text-red-600 text-sm">{activitiesError}</p>
+              </div>
+            ) : activities.length > 0 ? (
+              <div className="space-y-0">
+                {activities.map((activity, index) => (
+                  <ActivityItem key={index} activity={activity} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm">No activities logged for this contact yet.</p>
+              </div>
+            )}
+          </Card>
         </div>
       </div>
       

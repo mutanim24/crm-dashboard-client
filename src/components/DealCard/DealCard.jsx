@@ -19,6 +19,11 @@ const DealCard = ({ deal, index }) => {
             <div className="text-sm text-gray-600 mt-1">
               ${deal.value.toLocaleString()}
             </div>
+            {deal.contact && (
+              <div className="text-xs text-gray-500 mt-1">
+                Contact: {deal.contact.name}
+              </div>
+            )}
           </Card>
         </div>
       )}

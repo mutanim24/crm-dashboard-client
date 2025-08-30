@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { saveKixieCredentials, initiateKixieCall, sendKixieSms, toggleKixieIntegrationStatus } from '../services/integrationService';
+import { saveKixieCredentials, initiateKixieCall, sendKixieSms, toggleKixieIntegrationStatus, simulateKixieWebhook } from '../services/integrationService';
 
 // Async thunk for saving Kixie credentials
 export const saveKixieCreds = createAsyncThunk(
@@ -64,6 +64,23 @@ export const sendSms = createAsyncThunk(
     } catch (error) {
       console.error('Integration slice: SMS sending failed:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to send SMS';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Async thunk for simulating Kixie webhook
+export const simulateWebhook = createAsyncThunk(
+  'integration/simulateWebhook',
+  async (contactId, { rejectWithValue }) => {
+    try {
+      console.log('Integration slice: Simulating webhook for contactId:', contactId);
+      const response = await simulateKixieWebhook(contactId);
+      console.log('Integration slice: Webhook simulated successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Integration slice: Webhook simulation failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to simulate webhook';
       return rejectWithValue(errorMessage);
     }
   }
@@ -150,6 +167,19 @@ const integrationSlice = createSlice({
         state.error = null;
       })
       .addCase(toggleKixieIntegration.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Simulate webhook cases
+      .addCase(simulateWebhook.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(simulateWebhook.fulfilled, (state) => {
+        state.loading = false;
+        // No state update needed as the activity timeline will be refreshed separately
+      })
+      .addCase(simulateWebhook.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

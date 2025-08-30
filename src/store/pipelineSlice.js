@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getPipelines, getPipelineById, getPipelineDeals, updateDealStage, createPipeline } from '../services/pipelineService';
+import { createDeal } from '../services/dealService';
 
 // Async thunks
 export const fetchPipelines = createAsyncThunk('pipelines/fetchPipelines', async () => {
@@ -24,6 +25,11 @@ export const updateDealStageThunk = createAsyncThunk('pipelines/updateDealStage'
 
 export const createPipelineThunk = createAsyncThunk('pipelines/createPipeline', async (pipelineData) => {
   const response = await createPipeline(pipelineData);
+  return response.data;
+});
+
+export const createDealThunk = createAsyncThunk('pipelines/createDeal', async (dealData) => {
+  const response = await createDeal(dealData);
   return response.data;
 });
 
@@ -161,6 +167,58 @@ const pipelineSlice = createSlice({
         state.pipelines = [action.payload, ...state.pipelines];
       })
       .addCase(createPipelineThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      
+      // Create deal
+      .addCase(createDealThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createDealThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        
+        // Safely extract the new deal object from action.payload
+        const newDeal = action.payload?.data;
+        
+        // Guard clauses to check for required properties
+        if (!newDeal || !newDeal.pipelineId || !newDeal.stageId) {
+          console.error('Error: Invalid deal data received. Missing required properties:', newDeal);
+          return;
+        }
+        
+        // Find the target pipeline
+        const targetPipeline = state.pipelines.find(p => p.id === newDeal.pipelineId);
+        if (!targetPipeline) {
+          console.error(`Error: Pipeline with ID ${newDeal.pipelineId} not found.`);
+          return;
+        }
+        
+        // Find the target stage within the pipeline
+        const targetStage = targetPipeline.stages.find(s => s.id === newDeal.stageId);
+        if (!targetStage) {
+          console.error(`Error: Stage with ID ${newDeal.stageId} not found in pipeline ${newDeal.pipelineId}.`);
+          return;
+        }
+        
+        // Immutably add the new deal to the beginning of the targetStage.deals array
+        targetStage.deals = [newDeal, ...targetStage.deals];
+        
+        // Update the deals array in state
+        const allDeals = [];
+        state.pipelines.forEach(pipeline => {
+          if (pipeline.stages) {
+            pipeline.stages.forEach(stage => {
+              if (stage.deals) {
+                allDeals.push(...stage.deals);
+              }
+            });
+          }
+        });
+        state.deals = allDeals;
+      })
+      .addCase(createDealThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       });

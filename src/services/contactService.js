@@ -12,6 +12,12 @@ export const getContactById = async (id) => {
   return response.data;
 };
 
+// Get activities for a contact
+export const getContactActivities = async (id) => {
+  const response = await api.get(`/contacts/${id}/activities`);
+  return response.data;
+};
+
 // Create a new contact
 export const createContact = async (contactData) => {
   const response = await api.post('/contacts', contactData);
