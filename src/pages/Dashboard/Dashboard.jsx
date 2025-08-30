@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchPipelines } from '../../store/pipelineSlice';
+import { useNavigate } from 'react-router-dom';
 import Card from '../../components/Card/Card';
 import PipelineBoard from '../../components/PipelineBoard/PipelineBoard';
 import Button from '../../components/Button/Button';
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const { pipelines, selectedPipeline, loading } = useSelector((state) => state.pipelines);
+  const navigate = useNavigate();
   
   // Fetch pipelines on component mount
   useEffect(() => {
@@ -168,25 +170,41 @@ const Dashboard = () => {
                 Quick Actions
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="p-4 flex flex-col items-center">
+                <Button 
+                  variant="outline" 
+                  className="p-4 flex flex-col items-center"
+                  onClick={() => navigate('/contacts')}
+                >
                   <svg className="w-8 h-8 mx-auto mb-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <span className="text-sm font-medium text-gray-900">Add Contact</span>
                 </Button>
-                <Button variant="outline" className="p-4 flex flex-col items-center">
+                <Button 
+                  variant="outline" 
+                  className="p-4 flex flex-col items-center"
+                  onClick={() => navigate('/pipelines')}
+                >
                   <svg className="w-8 h-8 mx-auto mb-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="text-sm font-medium text-gray-900">Create Deal</span>
                 </Button>
-                <Button variant="outline" className="p-4 flex flex-col items-center">
+                <Button 
+                  variant="outline" 
+                  className="p-4 flex flex-col items-center"
+                  onClick={() => navigate('/contacts')}
+                >
                   <svg className="w-8 h-8 mx-auto mb-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   <span className="text-sm font-medium text-gray-900">Send Email</span>
                 </Button>
-                <Button variant="outline" className="p-4 flex flex-col items-center">
+                <Button 
+                  variant="outline" 
+                  className="p-4 flex flex-col items-center"
+                  onClick={() => navigate('/settings')}
+                >
                   <svg className="w-8 h-8 mx-auto mb-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 9a2 2 0 002 2h8a2 2 0 002-2l-2-9m-6 0V7" />
                   </svg>

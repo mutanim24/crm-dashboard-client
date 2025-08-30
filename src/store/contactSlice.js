@@ -69,9 +69,18 @@ const contactSlice = createSlice({
       .addCase(fetchContacts.fulfilled, (state, action) => {
         state.loading = false;
         // The API response from contactService returns response.data
-        // If the API returns { contacts: [...] }, extract the array
+        // If the API returns { success: true, data: [...] }, extract the array
         // If the API returns the array directly, use it as is
-        state.contacts = action.payload.contacts || action.payload.data || action.payload || [];
+        const data = action.payload;
+        if (data && data.data && Array.isArray(data.data)) {
+          state.contacts = data.data;
+        } else if (Array.isArray(data)) {
+          state.contacts = data;
+        } else if (data && data.contacts && Array.isArray(data.contacts)) {
+          state.contacts = data.contacts;
+        } else {
+          state.contacts = [];
+        }
       })
       .addCase(fetchContacts.rejected, (state, action) => {
         state.loading = false;

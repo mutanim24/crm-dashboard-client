@@ -18,6 +18,7 @@ import Settings from './pages/Settings/Settings';
 import TemplatesPage from './pages/Settings/TemplatesPage';
 import IntegrationsPage from './pages/Settings/IntegrationsPage';
 import WebhookSimulatorPage from './pages/Developer/WebhookSimulatorPage';
+import ProfilePage from './pages/Profile/ProfilePage';
 import { Toaster } from 'react-hot-toast';
 
 const App = () => {
@@ -237,6 +238,23 @@ const App = () => {
                     <Navbar />
                     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
                       <WebhookSimulatorPage />
+                    </main>
+                  </div>
+                </div>
+              </PrivateRoute>
+            } 
+          />
+          
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar isOpen={false} setIsOpen={() => {}} />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Navbar />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <ProfilePage />
                     </main>
                   </div>
                 </div>

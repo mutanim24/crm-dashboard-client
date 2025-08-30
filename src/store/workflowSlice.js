@@ -86,7 +86,19 @@ const workflowSlice = createSlice({
       })
       .addCase(fetchWorkflows.fulfilled, (state, action) => {
         state.loading = false;
-        state.workflows = action.payload;
+        // The API response from workflowService returns response.data
+        // If the API returns { success: true, data: [...] }, extract the array
+        // If the API returns the array directly, use it as is
+        const data = action.payload;
+        if (data && data.data && Array.isArray(data.data)) {
+          state.workflows = data.data;
+        } else if (Array.isArray(data)) {
+          state.workflows = data;
+        } else if (data && data.workflows && Array.isArray(data.workflows)) {
+          state.workflows = data.workflows;
+        } else {
+          state.workflows = [];
+        }
       })
       .addCase(fetchWorkflows.rejected, (state, action) => {
         state.loading = false;

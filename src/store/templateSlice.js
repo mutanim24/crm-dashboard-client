@@ -66,7 +66,19 @@ const templateSlice = createSlice({
       })
       .addCase(fetchTemplates.fulfilled, (state, action) => {
         state.loading = false;
-        state.templates = action.payload;
+        // The API response from templateService returns response.data
+        // If the API returns { success: true, data: [...] }, extract the array
+        // If the API returns the array directly, use it as is
+        const data = action.payload;
+        if (data && data.data && Array.isArray(data.data)) {
+          state.templates = data.data;
+        } else if (Array.isArray(data)) {
+          state.templates = data;
+        } else if (data && data.templates && Array.isArray(data.templates)) {
+          state.templates = data.templates;
+        } else {
+          state.templates = [];
+        }
       })
       .addCase(fetchTemplates.rejected, (state, action) => {
         state.loading = false;

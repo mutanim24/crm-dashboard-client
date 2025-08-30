@@ -61,9 +61,22 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    updateProfile: (state, action) => {
+      state.user = {
+        ...state.user,
+        ...action.payload,
+      };
+      
+      // Update localStorage with new user data
+      const authData = JSON.parse(localStorage.getItem('auth') || '{}');
+      localStorage.setItem('auth', JSON.stringify({
+        ...authData,
+        user: state.user
+      }));
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, registerStart, registerSuccess, registerFailure, logout, clearError } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, registerStart, registerSuccess, registerFailure, logout, clearError, updateProfile } = authSlice.actions;
 
 export default authSlice.reducer;

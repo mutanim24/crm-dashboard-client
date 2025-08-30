@@ -103,12 +103,28 @@ const pipelineSlice = createSlice({
       })
       .addCase(fetchPipelines.fulfilled, (state, action) => {
         state.loading = false;
+        // The API response from pipelineService returns response.data
+        // If the API returns { success: true, data: [...] }, extract the array
+        // If the API returns the array directly, use it as is
+        const data = action.payload;
+        let pipelines = [];
+        
+        if (data && data.data && Array.isArray(data.data)) {
+          pipelines = data.data;
+        } else if (Array.isArray(data)) {
+          pipelines = data;
+        } else if (data && data.pipelines && Array.isArray(data.pipelines)) {
+          pipelines = data.pipelines;
+        } else {
+          pipelines = [];
+        }
+        
         // Store the deeply nested pipeline structure
-        state.pipelines = action.payload;
+        state.pipelines = pipelines;
         
         // Extract all deals from all pipelines and stages
         const allDeals = [];
-        action.payload.forEach(pipeline => {
+        pipelines.forEach(pipeline => {
           if (pipeline.stages) {
             pipeline.stages.forEach(stage => {
               if (stage.deals) {
@@ -119,8 +135,8 @@ const pipelineSlice = createSlice({
         });
         state.deals = allDeals;
         
-        if (action.payload.length > 0 && !state.selectedPipeline) {
-          state.selectedPipeline = action.payload[0].id;
+        if (pipelines.length > 0 && !state.selectedPipeline) {
+          state.selectedPipeline = pipelines[0].id;
         }
       })
       .addCase(fetchPipelines.rejected, (state, action) => {

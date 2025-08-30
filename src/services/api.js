@@ -112,11 +112,42 @@ const mockResponses = {
         token: 'mock-jwt-token-for-new-user'
       }
     };
+  },
+  
+  '/auth/profile': (data) => {
+    // Mock successful profile update
+    const authData = JSON.parse(localStorage.getItem('auth') || '{}');
+    const currentUser = authData.user || {};
+    
+    // Update user data with new profile information
+    const updatedUser = {
+      ...currentUser,
+      name: data.fullName || currentUser.name,
+      email: data.email || currentUser.email,
+      phoneNumber: data.phoneNumber || currentUser.phoneNumber || '',
+      company: data.company || currentUser.company || '',
+      jobTitle: data.jobTitle || currentUser.jobTitle || ''
+    };
+    
+    // Update localStorage with new user data
+    localStorage.setItem('auth', JSON.stringify({
+      ...authData,
+      user: updatedUser
+    }));
+    
+    return {
+      data: {
+        success: true,
+        data: updatedUser
+      }
+    };
   }
 };
 
 // Override axios request for auth endpoints when in development
 const originalPost = api.post;
+const originalPut = api.put;
+
 api.post = async function(url, data, config) {
   // Check if this is an auth endpoint and we should use mock response
   // Only use mock responses if the backend is not available
@@ -139,9 +170,51 @@ api.post = async function(url, data, config) {
   return originalPost.call(this, url, data, config);
 };
 
+api.put = async function(url, data, config) {
+  // Check if this is an auth endpoint and we should use mock response
+  // Only use mock responses if the backend is not available
+  if (import.meta.env.MODE === 'development' && mockResponses[url]) {
+    try {
+      // First try to make a real API call
+      return originalPut.call(this, url, data, config);
+    } catch (error) {
+      // If the real API call fails, use mock response
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+        console.warn('Backend not available, using mock response');
+        return mockResponses[url](data);
+      }
+      // Otherwise, rethrow the error
+      throw error;
+    }
+  }
+  
+  // Otherwise use the original axios put
+  return originalPut.call(this, url, data, config);
+};
+
 // Function to simulate Kixie webhook for testing
 export const simulateKixieWebhook = async (contactId) => {
   return api.post(`/webhooks/kixie/test`, { contactId });
+};
+
+// Function to update user profile
+export const updateProfile = async (profileData) => {
+  try {
+    const response = await api.put('/auth/profile', profileData);
+    
+    // Handle both real API response and mock response
+    const responseData = response.data.data || response.data;
+    
+    return {
+      success: true,
+      data: responseData
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Failed to update profile'
+    };
+  }
 };
 
 export default api;
