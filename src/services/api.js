@@ -119,15 +119,70 @@ const mockResponses = {
     const authData = JSON.parse(localStorage.getItem('auth') || '{}');
     const currentUser = authData.user || {};
     
-    // Update user data with new profile information
-    const updatedUser = {
+    // Handle FormData (file uploads)
+    let updatedUser = {
       ...currentUser,
       name: data.fullName || currentUser.name,
       email: data.email || currentUser.email,
       phoneNumber: data.phoneNumber || currentUser.phoneNumber || '',
       company: data.company || currentUser.company || '',
-      jobTitle: data.jobTitle || currentUser.jobTitle || ''
+      jobTitle: data.jobTitle || currentUser.jobTitle || '',
+      bio: data.bio || currentUser.bio || ''
     };
+    
+    // Handle profile image upload
+    if (data.profileImage) {
+      // In a real app, this would be the actual image URL from the server
+      // For mock purposes, we'll create a data URL
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        updatedUser.profileImage = e.target.result;
+        
+        // Update localStorage with new user data
+        localStorage.setItem('auth', JSON.stringify({
+          ...authData,
+          user: updatedUser
+        }));
+      };
+      
+      // For mock purposes, we'll simulate the upload
+      setTimeout(() => {
+        updatedUser.profileImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNGRjAwMDAiLz4KPHBhdGggZD0iTTEyLjUgMTQuMUMxMi41IDE0LjMgMTIuNSAxNS4zIDEyLjUgMTYuNUMxMi41IDE3LjMgMTIuNSAxOS4zIDEyLjUgMjAuNUMxMi41IDIwLjMgMTIuNSAyMi41IDEyLjUgMjQuNUMxMi41IDI1LjMgMTIuNSAyNi41IDEyLjUgMjcuNUMxMi41IDI4LjMgMTIuNSAzMC41IDEyLjUgMTEuNUMxMi41IDguMyAxMi41IDcuMyAxMi41IDYuN0MxMi41IDUuMyAxMi41IDQuMyAxMi41IDMuN0MxMi41IDMuMyAxMi41IDQuMyAxMi41IDUuN0MxMi41IDYuMyAxMi41IDcuMyAxMi41IDguN0MxMi41IDExLjUgMTIuNSAxMC41IDEyLjUgOS41QzEyLjUgOC41IDEyLjUgNy41IDEyLjUgNi43QzEyLjUgNS41IDEyLjUgNC41IDEyLjUgMy43QzEyLjUgMy41IDEyLjUgNC41IDEyLjUgNS43QzEyLjUgNi41IDEyLjUgNy41IDEyLjUgOC41QzEyLjUgMTAuNSAxMi41IDExLjUgMTIuNSAxOS41QzEyLjUgMTYuNSAxMi41IDE1LjMgMTIuNSAxNC4zWiIgZmlsbD0iIzAwQ0ZGRiIvPgo8L3N2Zz4=';
+        
+        // Update localStorage with new user data
+        localStorage.setItem('auth', JSON.stringify({
+          ...authData,
+          user: updatedUser
+        }));
+      }, 500);
+    }
+    
+    // Handle cover image upload
+    if (data.coverImage) {
+      // In a real app, this would be the actual image URL from the server
+      // For mock purposes, we'll create a data URL
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        updatedUser.coverImage = e.target.result;
+        
+        // Update localStorage with new user data
+        localStorage.setItem('auth', JSON.stringify({
+          ...authData,
+          user: updatedUser
+        }));
+      };
+      
+      // For mock purposes, we'll simulate the upload
+      setTimeout(() => {
+        updatedUser.coverImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM5Q0EzRjMiLz4KPHBhdGggZD0iTTEyLjUgMTQuMUMxMi41IDE0LjMgMTIuNSAxNS4zIDEyLjUgMTYuNUMxMi41IDE3LjMgMTIuNSAxOS4zIDEyLjUgMjAuNUMxMi41IDIwLjMgMTIuNSAyMi41IDEyLjUgMjQuNUMxMi41IDI1LjMgMTIuNSAyNi41IDEyLjUgMjcuNUMxMi41IDI4LjMgMTIuNSAzMC41IDEyLjUgMTEuNUMxMi41IDguMyAxMi41IDcuMyAxMi41IDYuN0MxMi41IDUuMyAxMi41IDQuMyAxMi41IDMuN0MxMi41IDMuMyAxMi41IDQuMyAxMi41IDUuN0MxMi41IDYuMyAxMi41IDcuMyAxMi41IDguN0MxMi41IDExLjUgMTIuNSAxMC41IDEyLjUgOS41QzEyLjUgOC41IDEyLjUgNy41IDEyLjUgNi43QzEyLjUgNS41IDEyLjUgNC41IDEyLjUgMy43QzEyLjUgMy41IDEyLjUgNC41IDEyLjUgNS43QzEyLjUgNi41IDEyLjUgNy41IDEyLjUgOC41QzEyLjUgMTAuNSAxMi41IDExLjUgMTIuNSAxOS41QzEyLjUgMTYuNSAxMi41IDE1LjMgMTIuNSAxNC4zWiIgZmlsbD0iI0ZGRiIvPgo8L3N2Zz4=';
+        
+        // Update localStorage with new user data
+        localStorage.setItem('auth', JSON.stringify({
+          ...authData,
+          user: updatedUser
+        }));
+      }, 500);
+    }
     
     // Update localStorage with new user data
     localStorage.setItem('auth', JSON.stringify({
