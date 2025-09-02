@@ -20,12 +20,6 @@ const Settings = () => {
     title: '',
   });
 
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
   const [notificationSettings, setNotificationSettings] = useState({
     email: true,
     push: true,
@@ -40,14 +34,6 @@ const Settings = () => {
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfileForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({
       ...prev,
       [name]: value
     }));
@@ -79,26 +65,6 @@ const Settings = () => {
     // In a real app, this would make an API call
     console.log('Saving profile:', profileForm);
     alert('Profile updated successfully!');
-  };
-
-  const handleSavePassword = (e) => {
-    e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('New passwords do not match!');
-      return;
-    }
-    if (passwordForm.newPassword.length < 8) {
-      alert('New password must be at least 8 characters!');
-      return;
-    }
-    // In a real app, this would make an API call
-    console.log('Changing password');
-    alert('Password changed successfully!');
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
   };
 
   const handleSaveNotifications = (e) => {
