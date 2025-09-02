@@ -272,4 +272,24 @@ export const updateProfile = async (profileData) => {
   }
 };
 
+// Function to change user password
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await api.put('/auth/password', passwordData);
+    
+    // Handle both real API response and mock response
+    const responseData = response.data.data || response.data;
+    
+    return {
+      success: true,
+      data: responseData
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Failed to change password'
+    };
+  }
+};
+
 export default api;

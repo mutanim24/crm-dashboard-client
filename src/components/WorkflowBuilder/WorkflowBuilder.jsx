@@ -207,17 +207,17 @@ const WorkflowBuilderInner = ({ id }) => {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="p-4 bg-white border-b flex items-center space-x-4">
+      <div className="p-4 bg-white border-b border-gray-200 shadow-sm flex items-center space-x-4">
         <input
           type="text"
           value={workflowName}
           onChange={(e) => setWorkflowName(e.target.value)}
           placeholder="Enter workflow name..."
-          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <button
           onClick={handleSaveWorkflow}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md"
+          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium"
         >
           Save Workflow
         </button>
@@ -227,12 +227,12 @@ const WorkflowBuilderInner = ({ id }) => {
         <WorkflowSidebar onDragStart={onDragStart} />
         
         <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-4 right-4 z-10 flex space-x-2">
             <button 
               onClick={resetWorkflow}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
             >
-              Reset Workflow
+              Reset
             </button>
           </div>
           
@@ -245,10 +245,25 @@ const WorkflowBuilderInner = ({ id }) => {
             nodeTypes={nodeTypes}
             fitView
             attributionPosition="bottom-left"
+            className="bg-gray-50"
           >
-            <Background color="#aaa" gap={16} />
+            <Background color="#e5e7eb" gap={24} />
             <Controls />
-            <MiniMap />
+            <MiniMap 
+              nodeStrokeColor={(n) => {
+                if (n.style?.backgroundColor) {
+                  return n.style.backgroundColor;
+                }
+                return '#eee';
+              }}
+              nodeColor={(n) => {
+                if (n.style?.backgroundColor) {
+                  return n.style.backgroundColor;
+                }
+                return '#fff';
+              }}
+              nodeBorderRadius={2}
+            />
           </ReactFlow>
         </div>
       </div>

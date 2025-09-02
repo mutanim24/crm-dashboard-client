@@ -23,7 +23,7 @@ const WorkflowPage = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gray-100">
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
         </div>
@@ -32,25 +32,29 @@ const WorkflowPage = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Workflow List Sidebar */}
-      <div className="w-80 bg-white border-r overflow-y-auto">
-        <div className="p-4 border-b">
+      <div className="w-72 bg-white shadow-lg border-r border-gray-200 overflow-y-auto">
+        <div className="p-5 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">My Workflows</h2>
+          <p className="text-sm text-gray-500 mt-1">Click to edit</p>
         </div>
         
         <div className="p-4">
           {workflows.length === 0 ? (
-            <p className="text-gray-500 text-center">No workflows found</p>
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">No workflows found</div>
+              <div className="text-sm text-gray-500">Create your first workflow to get started</div>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {workflows.map((workflow) => (
                 <div
                   key={workflow.id}
-                  className="p-3 rounded-lg cursor-pointer transition-colors bg-gray-50 hover:bg-gray-100"
+                  className="p-4 rounded-xl cursor-pointer transition-all duration-200 bg-white border border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-[1.02]"
                   onClick={() => handleLoadWorkflow(workflow.id)}
                 >
-                  <h3 className="font-medium text-gray-800">{workflow.name}</h3>
+                  <h3 className="font-semibold text-gray-800">{workflow.name}</h3>
                   <p className="text-sm text-gray-500 mt-1">
                     {workflow.description || 'No description'}
                   </p>
@@ -66,11 +70,12 @@ const WorkflowPage = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        <div className="p-6 border-b">
+        <div className="p-5 border-b border-gray-200 bg-white shadow-sm">
           <h1 className="text-2xl font-bold text-gray-800">Visual Workflow Builder</h1>
+          <p className="text-gray-600 mt-1">Drag and drop elements to build your workflow</p>
         </div>
         
-        <div className="flex-1">
+        <div className="flex-1 bg-gray-50">
           <ReactFlowProvider>
             <WorkflowBuilder />
           </ReactFlowProvider>

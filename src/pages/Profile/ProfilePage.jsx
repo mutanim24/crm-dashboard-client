@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import Card from '../../components/Card/Card';
 import Input from '../../components/Input/Input';
 import Button from '../../components/Button/Button';
-import { updateProfile } from '../../services/api';
+import { updateProfile, changePassword } from '../../services/api';
 import { updateProfile as updateProfileAction } from '../../store/authSlice';
 
 const ProfilePage = () => {
@@ -20,6 +20,16 @@ const ProfilePage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  
+  // Password change state
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   // Initialize form with user data
   useEffect(() => {
@@ -41,6 +51,75 @@ const ProfilePage = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate passwords match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    
+    // Validate password length
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long');
+      return;
+    }
+    
+    // Clear any previous errors
+    setPasswordError('');
+    setLoading(true);
+    
+    try {
+      // Change password in backend
+      const response = await changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      if (response.success) {
+        // Clear form
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        
+        setPasswordSuccess(true);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setPasswordSuccess(false), 3000);
+      } else {
+        // Handle API error
+        setPasswordError(response.error || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordError(error.response?.data?.error || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePasswordChange = () => {
+    setIsChangingPassword(!isChangingPassword);
+    // Clear form and errors when toggling
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setPasswordError('');
+    setPasswordSuccess(false);
   };
 
   const handleSubmit = async (e) => {
@@ -294,6 +373,118 @@ const ProfilePage = () => {
                         <p className="mt-1 text-sm text-gray-900">{formData.company || 'Not provided'}</p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Password Change Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">Change Password</h3>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={togglePasswordChange}
+                        className="text-sm"
+                      >
+                        {isChangingPassword ? 'Cancel' : 'Change Password'}
+                      </Button>
+                    </div>
+
+                    {isChangingPassword && (
+                      <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                        {/* Password Success Message */}
+                        {passwordSuccess && (
+                          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                            <div className="flex">
+                              <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <div className="ml-3">
+                                <p className="text-sm font-medium text-green-800">
+                                  Password changed successfully!
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Password Error Message */}
+                        {passwordError && (
+                          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                            <div className="flex">
+                              <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <div className="ml-3">
+                                <p className="text-sm font-medium text-red-800">
+                                  {passwordError}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                              Current Password
+                            </label>
+                            <Input
+                              type="password"
+                              id="currentPassword"
+                              name="currentPassword"
+                              value={passwordData.currentPassword}
+                              onChange={handlePasswordInputChange}
+                              placeholder="Enter current password"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                              New Password
+                            </label>
+                            <Input
+                              type="password"
+                              id="newPassword"
+                              name="newPassword"
+                              value={passwordData.newPassword}
+                              onChange={handlePasswordInputChange}
+                              placeholder="Enter new password"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                              Confirm New Password
+                            </label>
+                            <Input
+                              type="password"
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              value={passwordData.confirmPassword}
+                              onChange={handlePasswordInputChange}
+                              placeholder="Confirm new password"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                          <Button
+                            type="submit"
+                            disabled={loading}
+                            className="px-6"
+                          >
+                            {loading ? 'Changing...' : 'Change Password'}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 </div>
               )}
