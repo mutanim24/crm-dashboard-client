@@ -231,60 +231,6 @@ const Settings = () => {
                   </form>
                 </Card>
 
-                {/* Password Settings */}
-                <Card className="p-6 mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Change Password</h2>
-                  <form onSubmit={handleSavePassword}>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Current Password
-                        </label>
-                        <Input
-                          type="password"
-                          name="currentPassword"
-                          value={passwordForm.currentPassword}
-                          onChange={handlePasswordChange}
-                          placeholder="Enter current password"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          New Password
-                        </label>
-                        <Input
-                          type="password"
-                          name="newPassword"
-                          value={passwordForm.newPassword}
-                          onChange={handlePasswordChange}
-                          placeholder="Enter new password"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Confirm New Password
-                        </label>
-                        <Input
-                          type="password"
-                          name="confirmPassword"
-                          value={passwordForm.confirmPassword}
-                          onChange={handlePasswordChange}
-                          placeholder="Confirm new password"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-6">
-                      <Button
-                        type="submit"
-                        text="Change Password"
-                        className="px-6"
-                      />
-                    </div>
-                  </form>
-                </Card>
               </div>
 
               {/* Notification Settings */}
