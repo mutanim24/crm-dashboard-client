@@ -1,5 +1,5 @@
 import React from 'react';
-import { Handle } from 'reactflow';
+import { Handle } from '@xyflow/react';
 
 const ActionNode = ({ data }) => {
   return (

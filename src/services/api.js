@@ -196,6 +196,88 @@ const mockResponses = {
         data: updatedUser
       }
     };
+  },
+  
+  '/workflows': () => {
+    // Mock workflow data
+    const mockWorkflows = [
+      { 
+        id: 1, 
+        name: "Lead Capture Workflow", 
+        description: "Automatically capture new leads from website",
+        createdAt: "2025-09-01",
+        updatedAt: "2025-09-01",
+        flowData: null
+      },
+      { 
+        id: 2, 
+        name: "Follow-up Workflow", 
+        description: "Follow up with leads after initial contact",
+        createdAt: "2025-09-02",
+        updatedAt: "2025-09-02",
+        flowData: null
+      }
+    ];
+    
+    return {
+      data: {
+        success: true,
+        data: mockWorkflows
+      }
+    };
+  },
+  
+  '/workflows/1': () => {
+    // Mock workflow data for ID 1
+    return {
+      data: {
+        success: true,
+        data: {
+          id: 1,
+          name: "Lead Capture Workflow",
+          description: "Automatically capture new leads from website",
+          createdAt: "2025-09-01",
+          updatedAt: "2025-09-01",
+          flowData: null
+        }
+      }
+    };
+  },
+  
+  '/workflows/2': () => {
+    // Mock workflow data for ID 2
+    return {
+      data: {
+        success: true,
+        data: {
+          id: 2,
+          name: "Follow-up Workflow",
+          description: "Follow up with leads after initial contact",
+          createdAt: "2025-09-02",
+          updatedAt: "2025-09-02",
+          flowData: null
+        }
+      }
+    };
+  },
+  
+  '/workflows/new': () => {
+    // Mock creating a new workflow
+    const newWorkflow = {
+      id: Date.now(), // Use timestamp as mock ID
+      name: "New Workflow",
+      description: "",
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+      flowData: null
+    };
+    
+    return {
+      data: {
+        success: true,
+        data: newWorkflow
+      }
+    };
   }
 };
 

@@ -9,8 +9,9 @@ import ReactFlow, {
   useReactFlow,
   MarkerType,
   ReactFlowProvider,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+
+import '@xyflow/react/dist/style.css';
 import WorkflowSidebar from '../WorkflowSidebar/WorkflowSidebar';
 import TriggerNode from '../TriggerNode/TriggerNode';
 import ActionNode from '../ActionNode/ActionNode';
@@ -206,66 +207,74 @@ const WorkflowBuilderInner = ({ id }) => {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="p-4 bg-white border-b border-gray-200 shadow-sm flex items-center space-x-4">
-        <input
-          type="text"
-          value={workflowName}
-          onChange={(e) => setWorkflowName(e.target.value)}
-          placeholder="Enter workflow name..."
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-        <button
-          onClick={handleSaveWorkflow}
-          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium"
-        >
-          Save Workflow
-        </button>
-      </div>
+    <div className="flex h-full">
+      <WorkflowSidebar onDragStart={onDragStart} />
       
-      <div className="flex flex-1">
-        <WorkflowSidebar onDragStart={onDragStart} />
-        
-        <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
-          <div className="absolute top-4 right-4 z-10 flex space-x-2">
-            <button 
-              onClick={resetWorkflow}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
-            >
-              Reset
-            </button>
-          </div>
-          
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            fitView
-            attributionPosition="bottom-left"
-            className="bg-gray-50"
+      <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
+        <div className="absolute top-4 right-4 z-10 flex space-x-2">
+          <button 
+            onClick={resetWorkflow}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
           >
-            <Background color="#e5e7eb" gap={24} />
-            <Controls />
-            <MiniMap 
-              nodeStrokeColor={(n) => {
-                if (n.style?.backgroundColor) {
-                  return n.style.backgroundColor;
-                }
-                return '#eee';
-              }}
-              nodeColor={(n) => {
-                if (n.style?.backgroundColor) {
-                  return n.style.backgroundColor;
-                }
-                return '#fff';
-              }}
-              nodeBorderRadius={2}
-            />
-          </ReactFlow>
+            Reset
+          </button>
+          <button 
+            onClick={handleSaveWorkflow}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+          >
+            Save
+          </button>
+          <button 
+            onClick={() => {
+              const newNode = {
+                id: `${Date.now()}`,
+                type: 'action',
+                position: { x: 100, y: 100 },
+                data: { 
+                  label: 'New Action',
+                  description: 'Workflow action'
+                },
+              };
+              setNodes((nds) => nds.concat(newNode));
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md flex items-center"
+          >
+            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            +
+          </button>
         </div>
+        
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+          attributionPosition="bottom-left"
+          className="bg-gray-50"
+        >
+          <Background color="#e5e7eb" gap={24} />
+          <MiniMap 
+            nodeStrokeColor={(n) => {
+              if (n.style?.backgroundColor) {
+                return n.style.backgroundColor;
+              }
+              return '#eee';
+            }}
+            nodeColor={(n) => {
+              if (n.style?.backgroundColor) {
+                return n.style.backgroundColor;
+              }
+              return '#fff';
+            }}
+            nodeBorderRadius={2}
+          />
+          <Controls position="top-right" />
+        </ReactFlow>
       </div>
     </div>
   );
