@@ -28,9 +28,22 @@ const ContactListView = ({ contacts }) => {
            contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
   });
   
-  const handleCreateContact = async (contactData) => {
+  const handleCreateContact = async (formValues) => {
     setIsCreating(true);
     setCreateError(null);
+    
+    // Transform formValues to extract tag IDs
+    const contactData = {
+      firstName: formValues.firstName,
+      lastName: formValues.lastName,
+      email: formValues.email,
+      phone: formValues.phone,
+      company: formValues.company,
+      // ✅ Convert tag strings into IDs (assuming tags are currently strings)
+      // Note: This assumes the backend will create new tags if they don't exist
+      // If the backend expects existing tag IDs, this logic may need adjustment
+      tags: formValues.tags || []
+    };
     
     toast.promise(
       (async () => {
