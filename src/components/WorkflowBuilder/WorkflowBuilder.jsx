@@ -15,19 +15,26 @@ import '@xyflow/react/dist/style.css';
 import WorkflowSidebar from '../WorkflowSidebar/WorkflowSidebar';
 import TriggerNode from '../TriggerNode/TriggerNode';
 import ActionNode from '../ActionNode/ActionNode';
+import FormNode from '../FormNode/FormNode';
+import WaitNode from '../WaitNode/WaitNode';
+import ConditionNode from '../ConditionNode/ConditionNode';
+import WebhookNode from '../WebhookNode/WebhookNode';
 import { toast } from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { createWorkflow, fetchWorkflow } from '../../store/workflowSlice';
+import { convertWorkflowToReactFlow, convertReactFlowToWorkflow, getDefaultNodeData, generateNodeId } from '../../utils/workflowUtils';
+import { NODE_TYPES } from '../../types/workflow';
 
 // Initial nodes
 const initialNodes = [
   {
     id: '1',
-    type: 'trigger',
+    type: NODE_TYPES.TRIGGER,
     position: { x: 100, y: 100 },
     data: { 
       label: 'When Tag is Added', 
-      description: 'Starts when a tag is added to a contact' 
+      description: 'Starts when a tag is added to a contact',
+      triggerType: 'tag_added'
     },
   },
 ];
@@ -37,8 +44,12 @@ const initialEdges = [];
 
 // Memoize nodeTypes outside the component to prevent recreation on every render
 const nodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
+  [NODE_TYPES.TRIGGER]: TriggerNode,
+  [NODE_TYPES.ACTION]: ActionNode,
+  [NODE_TYPES.FORM]: FormNode,
+  [NODE_TYPES.WAIT]: WaitNode,
+  [NODE_TYPES.CONDITION]: ConditionNode,
+  [NODE_TYPES.WEBHOOK]: WebhookNode,
 };
 
 const WorkflowBuilderInner = ({ id }) => {
@@ -57,17 +68,10 @@ const WorkflowBuilderInner = ({ id }) => {
         .unwrap()
         .then((workflowData) => {
           if (workflowData && workflowData.definition) {
-            // Extract nodes, edges, and viewport from the definition object
-            const { nodes: loadedNodes, edges: loadedEdges } = workflowData.definition;
-            
-            if (loadedNodes && Array.isArray(loadedNodes)) {
-              setNodes(loadedNodes);
-            }
-            
-            if (loadedEdges && Array.isArray(loadedEdges)) {
-              setEdges(loadedEdges);
-            }
-            
+            // Convert workflow definition to React Flow format
+            const { nodes, edges } = convertWorkflowToReactFlow(workflowData);
+            setNodes(nodes);
+            setEdges(edges);
             setWorkflowName(workflowData.name || '');
             
             // Restore viewport if available
@@ -137,14 +141,14 @@ const WorkflowBuilderInner = ({ id }) => {
         y: event.clientY,
       });
       
+      // Get default data for the node type
+      const defaultData = getDefaultNodeData(type);
+      
       const newNode = {
-        id: `${Date.now()}`,
+        id: generateNodeId(),
         type,
         position,
-        data: { 
-          label: type === 'trigger' ? 'New Trigger' : 'New Action',
-          description: type === 'trigger' ? 'Workflow trigger' : 'Workflow action'
-        },
+        data: defaultData
       };
       
       setNodes((nds) => nds.concat(newNode));
@@ -178,12 +182,15 @@ const WorkflowBuilderInner = ({ id }) => {
     try {
       toast.loading('Saving workflow...');
       
-      // Get the complete serializable canvas state
-      const flowObject = reactFlowInstance.toObject();
+      // Get the current viewport
+      const viewport = reactFlowInstance.getViewport();
+      
+      // Convert React Flow format to workflow definition
+      const definition = convertReactFlowToWorkflow(nodes, edges, viewport);
       
       const workflowData = {
         name: workflowName.trim(),
-        definition: flowObject // Send the entire ReactFlow object
+        definition
       };
 
       await dispatch(createWorkflow(workflowData)).unwrap();

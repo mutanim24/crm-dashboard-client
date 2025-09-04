@@ -18,20 +18,27 @@ import  {
 import '@xyflow/react/dist/style.css';
 import TriggerNode from '../../components/TriggerNode/TriggerNode';
 import ActionNode from '../../components/ActionNode/ActionNode';
+import FormNode from '../../components/FormNode/FormNode';
+import WaitNode from '../../components/WaitNode/WaitNode';
+import ConditionNode from '../../components/ConditionNode/ConditionNode';
+import WebhookNode from '../../components/WebhookNode/WebhookNode';
 import { toast } from 'react-hot-toast';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
 import { FiEdit2, FiSave, FiX, FiTrash2, FiPlus } from 'react-icons/fi';
+import { convertWorkflowToReactFlow, convertReactFlowToWorkflow, getDefaultNodeData, generateNodeId } from '../../utils/workflowUtils';
+import { NODE_TYPES } from '../../types/workflow';
 
 // Initial nodes
 const initialNodes = [
   {
     id: '1',
-    type: 'trigger',
+    type: NODE_TYPES.TRIGGER,
     position: { x: 100, y: 100 },
     data: { 
       label: 'When Tag is Added', 
-      description: 'Starts when a tag is added to a contact' 
+      description: 'Starts when a tag is added to a contact',
+      triggerType: 'tag_added'
     },
   },
 ];
@@ -41,8 +48,12 @@ const initialEdges = [];
 
 // Memoize nodeTypes outside the component to prevent recreation on every render
 const nodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
+  [NODE_TYPES.TRIGGER]: TriggerNode,
+  [NODE_TYPES.ACTION]: ActionNode,
+  [NODE_TYPES.FORM]: FormNode,
+  [NODE_TYPES.WAIT]: WaitNode,
+  [NODE_TYPES.CONDITION]: ConditionNode,
+  [NODE_TYPES.WEBHOOK]: WebhookNode,
 };
 
 // Node options for the right sidebar
@@ -74,16 +85,10 @@ const WorkflowCanvasPageInner = () => {
         .unwrap()
         .then((workflowData) => {
           if (workflowData && workflowData.definition) {
-            // Extract nodes, edges, and viewport from the definition object
-            const { nodes: loadedNodes, edges: loadedEdges } = workflowData.definition;
-            
-            if (loadedNodes && Array.isArray(loadedNodes)) {
-              setNodes(loadedNodes);
-            }
-            
-            if (loadedEdges && Array.isArray(loadedEdges)) {
-              setEdges(loadedEdges);
-            }
+            // Convert workflow definition to React Flow format
+            const { nodes, edges } = convertWorkflowToReactFlow(workflowData);
+            setNodes(nodes);
+            setEdges(edges);
             
             // Workflow name is displayed in the header from currentWorkflow
             // Restore viewport if available
@@ -150,14 +155,14 @@ const WorkflowCanvasPageInner = () => {
         y: event.clientY,
       });
       
+      // Get default data for the node type
+      const defaultData = getDefaultNodeData(type);
+      
       const newNode = {
-        id: `${Date.now()}`,
+        id: generateNodeId(),
         type,
         position,
-        data: { 
-          label: getNodeLabel(type),
-          description: getNodeDescription(type)
-        },
+        data: defaultData
       };
       
       setNodes((nds) => nds.concat(newNode));
@@ -168,14 +173,14 @@ const WorkflowCanvasPageInner = () => {
   const handleAddNode = (nodeType) => {
     const position = { x: 100, y: 100 + (nodes.length * 100) };
     
+    // Get default data for the node type
+    const defaultData = getDefaultNodeData(nodeType);
+    
     const newNode = {
-      id: `${Date.now()}`,
+      id: generateNodeId(),
       type: nodeType,
       position,
-      data: { 
-        label: getNodeLabel(nodeType),
-        description: getNodeDescription(nodeType)
-      },
+      data: defaultData
     };
     
     setNodes((nds) => nds.concat(newNode));
@@ -184,16 +189,6 @@ const WorkflowCanvasPageInner = () => {
 
   const handleBackToList = () => {
     navigate('/workflows');
-  };
-
-  const getNodeLabel = (type) => {
-    switch(type) {
-      case 'trigger': return 'Trigger';
-      case 'form': return 'Form';
-      case 'email': return 'Send Email';
-      case 'wait': return 'Wait/Delay';
-      default: return 'Node';
-    }
   };
 
   const getNodeDescription = (type) => {
