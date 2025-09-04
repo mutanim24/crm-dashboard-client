@@ -114,14 +114,14 @@ const WorkflowCanvasPageInner = () => {
     }
   }, [id, dispatch, setNodes, setEdges, reactFlowInstance]);
 
-  // Fit view when nodes or edges change
-  useEffect(() => {
-    if (nodes.length > 0 && edges.length >= 0 && reactFlowInstance) {
-      setTimeout(() => {
-        reactFlowInstance.fitView({ duration: 300 });
-      }, 100);
-    }
-  }, [nodes, edges, reactFlowInstance]);
+  // Removed auto-zoom effect - user will manually control zoom
+  // useEffect(() => {
+  //   if (nodes.length > 0 && edges.length >= 0 && reactFlowInstance) {
+  //     setTimeout(() => {
+  //       reactFlowInstance.fitView({ duration: 300 });
+  //     }, 100);
+  //   }
+  // }, [nodes, edges, reactFlowInstance]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge({ 
