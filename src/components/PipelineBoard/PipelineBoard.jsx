@@ -12,6 +12,35 @@ const PipelineBoard = ({ pipeline }) => {
   const [isCreateDealModalOpen, setIsCreateDealModalOpen] = useState(false);
   const [stageForNewDeal, setStageForNewDeal] = useState(null);
 
+  // Debug: Log pipeline data
+  console.log('PipelineBoard received pipeline:', pipeline);
+
+  // Handle case where pipeline is not available
+  if (!pipeline) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Pipeline Found</h3>
+          <p className="text-gray-500 mb-4">Create a pipeline to get started with your sales process.</p>
+          <Button onClick={() => window.location.href = '/settings'}>
+            Go to Settings
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure stages array exists and has default columns if empty
+  const stages = pipeline.stages || [];
+  
+  // If no stages exist, create default columns
+  const displayStages = stages.length === 0 ? [
+    { id: 'new-lead', name: 'New Lead', deals: [] },
+    { id: 'contact-made', name: 'Contact Made', deals: [] },
+    { id: 'proposal-sent', name: 'Proposal Sent', deals: [] },
+    { id: 'negotiation', name: 'Negotiation', deals: [] }
+  ] : stages;
+
   const handleCreateDealClick = (stage) => {
     setStageForNewDeal(stage);
     setIsCreateDealModalOpen(true);
@@ -57,7 +86,7 @@ const PipelineBoard = ({ pipeline }) => {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex-1 overflow-x-auto">
           <div className="flex space-x-4 p-4">
-            {pipeline.stages.map((stage) => (
+            {displayStages.map((stage) => (
               <div key={stage.id} className="flex-1 min-w-[300px]">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-semibold text-gray-700">{stage.name}</h3>

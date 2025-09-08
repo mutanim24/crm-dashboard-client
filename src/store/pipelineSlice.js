@@ -109,6 +109,8 @@ const pipelineSlice = createSlice({
         const data = action.payload;
         let pipelines = [];
         
+        console.log('PipelineSlice - Raw API response:', data);
+        
         if (data && data.data && Array.isArray(data.data)) {
           pipelines = data.data;
         } else if (Array.isArray(data)) {
@@ -118,6 +120,8 @@ const pipelineSlice = createSlice({
         } else {
           pipelines = [];
         }
+        
+        console.log('PipelineSlice - Processed pipelines:', pipelines);
         
         // Store the deeply nested pipeline structure
         state.pipelines = pipelines;
