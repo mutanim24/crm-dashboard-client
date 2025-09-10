@@ -1,45 +1,83 @@
-import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import React, { useState, useMemo } from 'react';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { useDispatch } from 'react-redux';
 import { moveDealLocally, updateDealStageThunk } from '../../store/pipelineSlice';
 import PipelineStage from './PipelineStage';
 import DealForm from '../DealForm/DealForm';
 import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
+// --- Using react-icons for a professional and consistent icon set ---
+import { HiPlus } from 'react-icons/hi2';
+import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+
+
+// --- A Senior Dev practice: Break down complex UI into logical sub-components ---
+const StageColumn = ({ stage, index, onCreateDeal }) => {
+  // Memoize calculations to prevent re-rendering on every drag event
+  const { dealCount, totalValue } = useMemo(() => {
+    const deals = stage.deals || [];
+    const total = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+    return {
+      dealCount: deals.length,
+      totalValue: total
+    };
+  }, [stage.deals]);
+
+  // A professional color palette to visually distinguish columns
+  const borderColors = [
+    'border-blue-500',
+    'border-purple-500',
+    'border-teal-500',
+    'border-sky-500',
+    'border-indigo-500',
+  ];
+  const colorClass = borderColors[index % borderColors.length];
+
+  return (
+    <div className="flex flex-col w-[320px] flex-shrink-0">
+      {/* --- Column Header: Data-rich and Action-oriented --- */}
+      <div className={`flex justify-between items-center p-3 rounded-t-lg bg-white border-b border-t-4 ${colorClass} shadow-sm`}>
+        <div>
+          <h2 className="font-semibold text-gray-800">{stage.name}</h2>
+          <p className="text-xs text-gray-500">
+            {dealCount} {dealCount === 1 ? 'Deal' : 'Deals'} • ${totalValue.toLocaleString()}
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="!p-1.5"
+          onClick={() => onCreateDeal(stage)}
+          aria-label={`Add deal to ${stage.name}`}
+        >
+          <HiPlus className="w-5 h-5 text-gray-500" />
+        </Button>
+      </div>
+
+      {/* --- Droppable Area with Visual Feedback --- */}
+      <Droppable droppableId={String(stage.id)} type="stage">
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-grow min-h-[200px] p-2 rounded-b-lg bg-slate-100 transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-50' : ''}`}
+          >
+            {/* The unchanged PipelineStage component renders the deals */}
+            <PipelineStage stage={stage} type="stage" />
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </div>
+  );
+};
+
 
 const PipelineBoard = ({ pipeline }) => {
+  // --- All functionality and state management remains exactly the same ---
   const dispatch = useDispatch();
   const [isCreateDealModalOpen, setIsCreateDealModalOpen] = useState(false);
   const [stageForNewDeal, setStageForNewDeal] = useState(null);
-
-  // Debug: Log pipeline data
-  console.log('PipelineBoard received pipeline:', pipeline);
-
-  // Handle case where pipeline is not available
-  if (!pipeline) {
-    return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Pipeline Found</h3>
-          <p className="text-gray-500 mb-4">Create a pipeline to get started with your sales process.</p>
-          <Button onClick={() => window.location.href = '/settings'}>
-            Go to Settings
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Ensure stages array exists and has default columns if empty
-  const stages = pipeline.stages || [];
-  
-  // If no stages exist, create default columns
-  const displayStages = stages.length === 0 ? [
-    { id: 'new-lead', name: 'New Lead', deals: [] },
-    { id: 'contact-made', name: 'Contact Made', deals: [] },
-    { id: 'proposal-sent', name: 'Proposal Sent', deals: [] },
-    { id: 'negotiation', name: 'Negotiation', deals: [] }
-  ] : stages;
 
   const handleCreateDealClick = (stage) => {
     setStageForNewDeal(stage);
@@ -47,32 +85,18 @@ const PipelineBoard = ({ pipeline }) => {
   };
 
   const handleCreateDealSuccess = (newDeal) => {
-    // The deal is already added to the state by the Redux thunk
     console.log('Deal created successfully:', newDeal);
   };
-
+  
   const handleDragEnd = (result) => {
-    // If there's no destination, the drag was cancelled or invalid
-    if (!result.destination) {
+    if (!result.destination || (result.source.droppableId === result.destination.droppableId && result.source.index === result.destination.index)) {
       return;
     }
-
-    // If the source and destination are the same, no need to do anything
-    if (
-      result.source.droppableId === result.destination.droppableId &&
-      result.source.index === result.destination.index
-    ) {
-      return;
-    }
-
-    // Dispatch the action to move the deal locally
     dispatch(moveDealLocally({
       source: result.source,
       destination: result.destination,
       draggableId: result.draggableId
     }));
-
-    // Update the deal's stage in the backend only if it was moved to a different column
     if (result.source.droppableId !== result.destination.droppableId) {
       dispatch(updateDealStageThunk({
         dealId: result.draggableId,
@@ -81,36 +105,47 @@ const PipelineBoard = ({ pipeline }) => {
     }
   };
 
+  // --- Redesigned UI Starts Here ---
+
+  if (!pipeline) {
+    return (
+      <div className="text-center py-20 px-6 border-2 border-dashed border-gray-200 rounded-lg mt-8">
+        <HiOutlineClipboardDocumentList className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-4 text-lg font-semibold text-gray-900">No Pipeline Selected</h3>
+        <p className="mt-1 text-sm text-gray-500">Please create or select a pipeline to view your deals.</p>
+        <div className="mt-6">
+            <Button variant="primary" onClick={() => window.location.href = '/settings'}>Go to Settings</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const displayStages = pipeline.stages?.length > 0 ? pipeline.stages : [
+    { id: 'new-lead', name: 'New Lead', deals: [] },
+    { id: 'contact-made', name: 'Contact Made', deals: [] },
+    { id: 'proposal-sent', name: 'Proposal Sent', deals: [] },
+    { id: 'negotiation', name: 'Negotiation', deals: [] }
+  ];
+  
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex space-x-4 p-4">
-            {displayStages.map((stage) => (
-              <div key={stage.id} className="flex-1 min-w-[300px]">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-semibold text-gray-700">{stage.name}</h3>
-                  <Button
-                    size="sm"
-                    onClick={() => handleCreateDealClick(stage)}
-                  >
-                    + Create Deal
-                  </Button>
-                </div>
-                <PipelineStage stage={stage} type="stage" />
-              </div>
+        <div className="p-1 -m-1"> {/* Negative margin trick to hide outer scrollbar */}
+          <div className="flex gap-4 pb-4 overflow-x-auto">
+            {displayStages.map((stage, index) => (
+              <StageColumn
+                key={stage.id}
+                stage={stage}
+                index={index}
+                onCreateDeal={handleCreateDealClick}
+              />
             ))}
           </div>
         </div>
       </DragDropContext>
 
-      {/* Create Deal Modal */}
-      <Modal
-        isOpen={isCreateDealModalOpen}
-        onClose={() => setIsCreateDealModalOpen(false)}
-        title="Create New Deal"
-        size="md"
-      >
+      {/* --- Modal functionality remains unchanged --- */}
+      <Modal isOpen={isCreateDealModalOpen} onClose={() => setIsCreateDealModalOpen(false)} title="Create New Deal" size="md">
         <DealForm
           pipeline={pipeline}
           stageId={stageForNewDeal?.id}
