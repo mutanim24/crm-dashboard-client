@@ -1,5 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../store/authSlice';
 // --- Using react-icons for a professional and consistent icon set ---
 import { 
     HiChartPie, 
@@ -45,7 +47,7 @@ const NavItem = ({ item, isActive, onClick }) => (
     </li>
 );
 
-const SidebarFooter = ({ user }) => (
+const SidebarFooter = ({ user, onLogout }) => (
     <div className="p-4 border-t border-slate-700">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -57,7 +59,11 @@ const SidebarFooter = ({ user }) => (
                     <p className="text-xs text-slate-400">{user?.email || 'user@example.com'}</p>
                 </div>
             </div>
-            <button className="text-slate-400 hover:text-white transition-colors" aria-label="Log out">
+            <button 
+                className="text-slate-400 hover:text-white transition-colors" 
+                aria-label="Log out"
+                onClick={onLogout}
+            >
                 <HiArrowLeftOnRectangle className="w-5 h-5" />
             </button>
         </div>
@@ -85,6 +91,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       setIsOpen(false);
     }
   };
+
+  const dispatch = useDispatch();
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
+  const user = useSelector((state) => state.auth.user);
 
   // --- Redesigned UI Starts Here ---
   return (
@@ -117,7 +131,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </ul>
         </nav>
 
-        <SidebarFooter user={{}} /> {/* Placeholder for user object */}
+        <SidebarFooter user={user} onLogout={handleLogout} />
       </aside>
     </>
   );
