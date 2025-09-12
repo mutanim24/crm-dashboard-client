@@ -1,4 +1,4 @@
-import { React, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 // --- React Icons are used for a consistent, professional icon set ---
 import { HiCog6Tooth, HiPlus, HiMiniBanknotes, HiChartBar, HiScale, HiTrophy, HiOutlineExclamationTriangle, HiOutlineClipboardDocumentList } from "react-icons/hi2";

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   UsersIcon,
   CurrencyDollarIcon,
@@ -7,10 +8,8 @@ import {
   ChartPieIcon,
   PlusIcon,
   EnvelopeIcon,
-  CalendarIcon,
   ListBulletIcon,
 } from '@heroicons/react/24/outline';
-import { useNavigate } from 'react-router-dom';
 
 // NOTE: I am assuming you have these components.
 // If not, their basic structure is implied by the usage below.

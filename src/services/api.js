@@ -198,31 +198,26 @@ const mockResponses = {
     };
   },
   
-  '/workflows': () => {
-    // Mock workflow data
-    const mockWorkflows = [
-      { 
-        id: 1, 
-        name: "Lead Capture Workflow", 
-        description: "Automatically capture new leads from website",
-        createdAt: "2025-09-01",
-        updatedAt: "2025-09-01",
-        flowData: null
-      },
-      { 
-        id: 2, 
-        name: "Follow-up Workflow", 
-        description: "Follow up with leads after initial contact",
-        createdAt: "2025-09-02",
-        updatedAt: "2025-09-02",
-        flowData: null
-      }
-    ];
+  
+  '/workflows': (data) => {
+    // Mock creating a new workflow
+    const newWorkflow = {
+      id: Date.now(), // Use timestamp as mock ID
+      name: data?.name || "New Workflow",
+      definition: data?.definition || { nodes: [], edges: [] },
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    
+    // Get existing workflows from localStorage
+    const existingWorkflows = JSON.parse(localStorage.getItem('mock_workflows') || '[]');
+    existingWorkflows.push(newWorkflow);
+    localStorage.setItem('mock_workflows', JSON.stringify(existingWorkflows));
     
     return {
       data: {
         success: true,
-        data: mockWorkflows
+        data: existingWorkflows
       }
     };
   },
@@ -235,10 +230,9 @@ const mockResponses = {
         data: {
           id: 1,
           name: "Lead Capture Workflow",
-          description: "Automatically capture new leads from website",
+          definition: { nodes: [], edges: [] },
           createdAt: "2025-09-01",
-          updatedAt: "2025-09-01",
-          flowData: null
+          updatedAt: "2025-09-01"
         }
       }
     };
@@ -252,30 +246,40 @@ const mockResponses = {
         data: {
           id: 2,
           name: "Follow-up Workflow",
-          description: "Follow up with leads after initial contact",
+          definition: { nodes: [], edges: [] },
           createdAt: "2025-09-02",
-          updatedAt: "2025-09-02",
-          flowData: null
+          updatedAt: "2025-09-02"
         }
       }
     };
   },
   
-  '/workflows/new': () => {
-    // Mock creating a new workflow
-    const newWorkflow = {
-      id: Date.now(), // Use timestamp as mock ID
-      name: "New Workflow",
-      description: "",
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-      flowData: null
+  '/workflows/\\d+': (data, url) => {
+    // Extract ID from URL
+    const id = url.match(/\/workflows\/(\d+)/)[1];
+    
+    // Mock updating a workflow
+    const updatedWorkflow = {
+      id: parseInt(id),
+      name: data?.name || "Updated Workflow",
+      definition: data?.definition || { nodes: [], edges: [] },
+      updatedAt: new Date().toISOString().split('T')[0]
     };
+    
+    // Update localStorage
+    const existingWorkflows = JSON.parse(localStorage.getItem('mock_workflows') || '[]');
+    const index = existingWorkflows.findIndex(w => w.id === parseInt(id));
+    if (index !== -1) {
+      existingWorkflows[index] = updatedWorkflow;
+    } else {
+      existingWorkflows.push(updatedWorkflow);
+    }
+    localStorage.setItem('mock_workflows', JSON.stringify(existingWorkflows));
     
     return {
       data: {
         success: true,
-        data: newWorkflow
+        data: updatedWorkflow
       }
     };
   }
@@ -288,18 +292,42 @@ const originalPut = api.put;
 api.post = async function(url, data, config) {
   // Check if this is an auth endpoint and we should use mock response
   // Only use mock responses if the backend is not available
-  if (import.meta.env.MODE === 'development' && mockResponses[url]) {
-    try {
-      // First try to make a real API call
-      return originalPost.call(this, url, data, config);
-    } catch (error) {
-      // If the real API call fails, use mock response
-      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-        console.warn('Backend not available, using mock response');
-        return mockResponses[url](data);
+  if (import.meta.env.MODE === 'development') {
+    // Check for exact URL match first
+    if (mockResponses[url]) {
+      try {
+        // First try to make a real API call
+        return originalPost.call(this, url, data, config);
+      } catch (error) {
+        // If the real API call fails, use mock response
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+          console.warn('Backend not available, using mock response');
+          return mockResponses[url](data);
+        }
+        // Otherwise, rethrow the error
+        throw error;
       }
-      // Otherwise, rethrow the error
-      throw error;
+    }
+    
+    // Check for regex pattern match (for workflow IDs)
+    for (const [pattern, handler] of Object.entries(mockResponses)) {
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        const regex = new RegExp(pattern.slice(1, -1));
+        if (regex.test(url)) {
+          try {
+            // First try to make a real API call
+            return originalPost.call(this, url, data, config);
+          } catch (error) {
+            // If the real API call fails, use mock response
+            if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+              console.warn('Backend not available, using mock response');
+              return handler(data, url);
+            }
+            // Otherwise, rethrow the error
+            throw error;
+          }
+        }
+      }
     }
   }
   
@@ -310,18 +338,42 @@ api.post = async function(url, data, config) {
 api.put = async function(url, data, config) {
   // Check if this is an auth endpoint and we should use mock response
   // Only use mock responses if the backend is not available
-  if (import.meta.env.MODE === 'development' && mockResponses[url]) {
-    try {
-      // First try to make a real API call
-      return originalPut.call(this, url, data, config);
-    } catch (error) {
-      // If the real API call fails, use mock response
-      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-        console.warn('Backend not available, using mock response');
-        return mockResponses[url](data);
+  if (import.meta.env.MODE === 'development') {
+    // Check for exact URL match first
+    if (mockResponses[url]) {
+      try {
+        // First try to make a real API call
+        return originalPut.call(this, url, data, config);
+      } catch (error) {
+        // If the real API call fails, use mock response
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+          console.warn('Backend not available, using mock response');
+          return mockResponses[url](data);
+        }
+        // Otherwise, rethrow the error
+        throw error;
       }
-      // Otherwise, rethrow the error
-      throw error;
+    }
+    
+    // Check for regex pattern match (for workflow IDs)
+    for (const [pattern, handler] of Object.entries(mockResponses)) {
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        const regex = new RegExp(pattern.slice(1, -1));
+        if (regex.test(url)) {
+          try {
+            // First try to make a real API call
+            return originalPut.call(this, url, data, config);
+          } catch (error) {
+            // If the real API call fails, use mock response
+            if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+              console.warn('Backend not available, using mock response');
+              return handler(data, url);
+            }
+            // Otherwise, rethrow the error
+            throw error;
+          }
+        }
+      }
     }
   }
   

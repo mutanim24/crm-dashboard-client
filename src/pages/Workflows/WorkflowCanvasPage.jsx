@@ -13,7 +13,7 @@ import { toast } from 'react-hot-toast';
 import {
   HiArrowLeft, HiOutlinePencil, HiOutlineCheck, HiOutlineXMark, HiOutlineCloudArrowUp,
   HiPlus, HiOutlineSparkles, HiOutlinePaperAirplane, HiOutlineFunnel,
-  HiOutlineClock, HiCodeBracket
+  HiOutlineClock, HiCodeBracket, HiOutlineTrash
 } from "react-icons/hi2";
 
 // --- All Existing Imports are Preserved ---
@@ -25,6 +25,7 @@ import ConditionNode from '../../components/ConditionNode/ConditionNode';
 import WebhookNode from '../../components/WebhookNode/WebhookNode';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
+import NodePropertiesPanel from '../../components/NodePropertiesPanel/NodePropertiesPanel';
 import { convertWorkflowToReactFlow, convertReactFlowToWorkflow, getDefaultNodeData, generateNodeId } from '../../utils/workflowUtils';
 import { NODE_TYPES } from '../../types/workflow';
 
@@ -126,6 +127,8 @@ const WorkflowCanvasPageInner = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [workflowName, setWorkflowName] = useState('');
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [showNodeProperties, setShowNodeProperties] = useState(false);
 
   const currentWorkflow = useSelector(selectCurrentWorkflow);
 
@@ -180,6 +183,43 @@ const WorkflowCanvasPageInner = () => {
     setNodes((nds) => nds.concat(newNode));
   }, [reactFlowInstance, setNodes]);
 
+  const onNodeClick = useCallback((event, node) => {
+    // Check if the click is on a delete button
+    if (event.target.closest('.delete-node-btn')) {
+      return;
+    }
+    setSelectedNode(node);
+    setShowNodeProperties(true);
+  }, []);
+
+  const handleNodeSave = useCallback((nodeId, newData) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              ...newData
+            }
+          };
+        }
+        return node;
+      })
+    );
+    toast.success('Node updated successfully');
+  }, [setNodes]);
+
+  const handleNodeDelete = useCallback((nodeId) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) =>
+      eds.filter(
+        (edge) => edge.source !== nodeId && edge.target !== nodeId
+      )
+    );
+    toast.success('Node deleted successfully');
+  }, [setNodes, setEdges]);
+
   const handleSaveWorkflow = useCallback(async () => {
     if (!workflowName.trim()) {
       toast.error("Workflow name cannot be empty.");
@@ -196,7 +236,8 @@ const WorkflowCanvasPageInner = () => {
     const toastId = toast.loading('Saving workflow...');
     try {
       // *** TECHNICAL FIX: Pass arguments separately to the utility function ***
-      const definition = convertReactFlowToWorkflow(nodes, edges, reactFlowInstance.getViewport());
+      const viewport = reactFlowInstance ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+      const definition = convertReactFlowToWorkflow(nodes, edges, viewport);
 
       const workflowPayload = {
         name: workflowName,
@@ -226,6 +267,24 @@ const WorkflowCanvasPageInner = () => {
     event.dataTransfer.effectAllowed = 'move';
   }, []);
 
+  // Add event listener for delete button clicks
+  useEffect(() => {
+    const handleDeleteClick = (event) => {
+      const deleteBtn = event.target.closest('.delete-node-btn');
+      if (deleteBtn) {
+        const nodeId = deleteBtn.getAttribute('data-node-id');
+        if (nodeId) {
+          handleNodeDelete(nodeId);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleDeleteClick);
+    return () => {
+      document.removeEventListener('click', handleDeleteClick);
+    };
+  }, [handleNodeDelete]);
+
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div></div>;
   }
@@ -247,6 +306,7 @@ const WorkflowCanvasPageInner = () => {
           <ReactFlow
             nodes={nodes} edges={edges} onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange} onConnect={onConnect}
+            onNodeClick={onNodeClick}
             nodeTypes={nodeTypes} fitView
           >
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#e2e8f0" />
@@ -267,6 +327,14 @@ const WorkflowCanvasPageInner = () => {
         </main>
         {showSidebar && <ElementsSidebar onNodeDragStart={onNodeDragStart} />}
       </div>
+
+      <NodePropertiesPanel
+        node={selectedNode}
+        isOpen={showNodeProperties}
+        onClose={() => setShowNodeProperties(false)}
+        onSave={handleNodeSave}
+        onDelete={handleNodeDelete}
+      />
     </div>
   );
 };

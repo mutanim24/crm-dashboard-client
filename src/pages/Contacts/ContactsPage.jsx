@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { PlusIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 import { fetchContacts } from '../../store/contactSlice';
 import ContactListView from '../../components/ContactListView/ContactListView';
