@@ -59,9 +59,9 @@ export const fetchWorkflow = createAsyncThunk(
 // Update a workflow
 export const updateWorkflow = createAsyncThunk(
   'workflows/updateWorkflow',
-  async ({ id, name }, { rejectWithValue }) => {
+  async ({ id, name, definition }, { rejectWithValue }) => {
     try {
-      const response = await workflowService.updateWorkflow(id, { name });
+      const response = await workflowService.updateWorkflow(id, { name, definition });
       return response.data.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || 'Failed to update workflow');
@@ -113,11 +113,12 @@ const workflowSlice = createSlice({
         state.loading = false;
         state.workflows.unshift(action.payload);
         state.currentWorkflow = action.payload;
-        toast.success('Workflow saved successfully');
+        toast.success('Workflow created successfully');
       })
       .addCase(createWorkflow.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        toast.error(action.payload || 'Failed to create workflow');
       })
       
       // Create empty workflow
@@ -129,11 +130,12 @@ const workflowSlice = createSlice({
         state.loading = false;
         state.workflows.unshift(action.payload);
         state.currentWorkflow = action.payload;
-        toast.success('Workflow saved successfully');
+        toast.success('Workflow created successfully');
       })
       .addCase(createEmptyWorkflow.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        toast.error(action.payload || 'Failed to create workflow');
       })
       
       // Fetch all workflows

@@ -140,16 +140,19 @@ const WorkflowCanvasPageInner = () => {
       dispatch(fetchWorkflow(currentId)).unwrap().then(workflowData => {
         if (workflowData) {
           setWorkflowName(workflowData.name);
-          if (workflowData.definition) {
-            const { nodes: loadedNodes, edges: loadedEdges } = convertWorkflowToReactFlow(workflowData);
-            setNodes(loadedNodes || initialNodes);
-            setEdges(loadedEdges || initialEdges);
-            if (workflowData.definition.viewport) {
-              setTimeout(() => reactFlowInstance.setViewport(workflowData.definition.viewport), 100);
+            if (workflowData.definition) {
+              const { nodes: loadedNodes, edges: loadedEdges } = convertWorkflowToReactFlow(workflowData);
+              setNodes(loadedNodes || initialNodes);
+              setEdges(loadedEdges || initialEdges);
+              if (workflowData.definition.viewport) {
+                // Use requestAnimationFrame for smoother viewport transition
+                requestAnimationFrame(() => {
+                  reactFlowInstance.setViewport(workflowData.definition.viewport);
+                });
+              }
+            } else {
+              setNodes(initialNodes); setEdges(initialEdges);
             }
-          } else {
-            setNodes(initialNodes); setEdges(initialEdges);
-          }
         }
       }).catch(err => {
         toast.error('Failed to load workflow.');

@@ -30,6 +30,16 @@ const WorkflowDetailPage = () => {
     }
   }, [currentWorkflow, id]);
 
+  // Handle when a workflow is created or updated
+  useEffect(() => {
+    if (currentWorkflow && id === 'new') {
+      // If we just created a workflow, update the URL to show the real ID
+      if (currentWorkflow.id && currentWorkflow.id !== 'new') {
+        window.history.replaceState({}, '', `/workflows/${currentWorkflow.id}`);
+      }
+    }
+  }, [currentWorkflow, id]);
+
   const handleBackToList = () => {
     navigate('/workflows');
   };
@@ -158,7 +168,11 @@ const WorkflowDetailPage = () => {
 
       {/* Main Content - Canvas takes up remaining space */}
       <div className="flex-1">
-        <WorkflowBuilder id={id} />
+        <WorkflowBuilder 
+          id={id} 
+          workflowName={workflowName}
+          onWorkflowNameChange={setWorkflowName}
+        />
       </div>
     </div>
   );

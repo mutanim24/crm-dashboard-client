@@ -154,8 +154,14 @@ export const updateWorkflow = (id, workflowData) => {
       console.warn('API call failed, updating local storage:', error);
       
       const existingWorkflows = getWorkflowsFromLocalStorage();
+      const updatedWorkflow = {
+        ...existingWorkflows.find(w => w.id === id),
+        ...workflowData,
+        updatedAt: new Date().toISOString().split('T')[0]
+      };
+      
       const updatedWorkflows = existingWorkflows.map(w => 
-        w.id === id ? { ...w, ...workflowData, updatedAt: new Date().toISOString().split('T')[0] } : w
+        w.id === id ? updatedWorkflow : w
       );
       saveWorkflowsToLocalStorage(updatedWorkflows);
       
@@ -163,7 +169,7 @@ export const updateWorkflow = (id, workflowData) => {
       const mockResponse = {
         data: {
           success: true,
-          data: { ...existingWorkflows.find(w => w.id === id), ...workflowData }
+          data: updatedWorkflow
         }
       };
       return Promise.resolve(mockResponse);

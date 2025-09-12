@@ -21,7 +21,7 @@ import ConditionNode from '../ConditionNode/ConditionNode';
 import WebhookNode from '../WebhookNode/WebhookNode';
 import { toast } from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { createWorkflow, fetchWorkflow } from '../../store/workflowSlice';
+import { createWorkflow, fetchWorkflow, updateWorkflow } from '../../store/workflowSlice';
 import { convertWorkflowToReactFlow, convertReactFlowToWorkflow, getDefaultNodeData, generateNodeId } from '../../utils/workflowUtils';
 import { NODE_TYPES } from '../../types/workflow';
 
@@ -52,13 +52,22 @@ const nodeTypes = {
   [NODE_TYPES.WEBHOOK]: WebhookNode,
 };
 
-const WorkflowBuilderInner = ({ id }) => {
+const WorkflowBuilderInner = ({ id, workflowName: parentWorkflowName, onWorkflowNameChange }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const reactFlowInstance = useReactFlow();
-  const [workflowName, setWorkflowName] = useState('');
+  const [workflowName, setWorkflowName] = useState(parentWorkflowName || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [workflowDefinition, setWorkflowDefinition] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const dispatch = useDispatch();
+
+  // Sync workflow name with parent component
+  useEffect(() => {
+    if (onWorkflowNameChange && workflowName !== parentWorkflowName) {
+      onWorkflowNameChange(workflowName);
+    }
+  }, [workflowName, parentWorkflowName, onWorkflowNameChange]);
 
   // Load workflow data when id prop changes
   useEffect(() => {
@@ -80,11 +89,17 @@ const WorkflowBuilderInner = ({ id }) => {
                 reactFlowInstance.setViewport(workflowData.definition.viewport);
               }, 100);
             }
+            
+            // Initialize workflow definition
+            setWorkflowDefinition(workflowData.definition);
+            setHasUnsavedChanges(false);
           } else {
             // Reset to initial state if no definition
             setNodes(initialNodes);
             setEdges(initialEdges);
             setWorkflowName('');
+            setWorkflowDefinition(null);
+            setHasUnsavedChanges(false);
           }
         })
         .catch((error) => {
@@ -93,6 +108,8 @@ const WorkflowBuilderInner = ({ id }) => {
           setNodes(initialNodes);
           setEdges(initialEdges);
           setWorkflowName('');
+          setWorkflowDefinition(null);
+          setHasUnsavedChanges(false);
         })
         .finally(() => {
           setIsLoading(false);
@@ -102,17 +119,41 @@ const WorkflowBuilderInner = ({ id }) => {
       setNodes(initialNodes);
       setEdges(initialEdges);
       setWorkflowName('');
+      setWorkflowDefinition(null);
+      setHasUnsavedChanges(false);
     }
   }, [id, dispatch, setNodes, setEdges, reactFlowInstance]);
 
-  // Fit view when nodes or edges change
+  // Update workflow definition when nodes or edges change
   useEffect(() => {
-    if (nodes.length > 0 && edges.length >= 0 && reactFlowInstance) {
+    if (id && id !== 'new' && nodes.length > 0) {
+      const viewport = reactFlowInstance ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+      const definition = convertReactFlowToWorkflow(nodes, edges, viewport);
+      setWorkflowDefinition(definition);
+      setHasUnsavedChanges(true);
+    }
+  }, [nodes, edges, id, reactFlowInstance]);
+
+  // Update workflow definition when workflow name changes
+  useEffect(() => {
+    if (id && id !== 'new' && workflowDefinition) {
+      const updatedDefinition = {
+        ...workflowDefinition,
+        name: workflowName.trim()
+      };
+      setWorkflowDefinition(updatedDefinition);
+      setHasUnsavedChanges(true);
+    }
+  }, [workflowName, id, workflowDefinition]);
+
+  // Fit view when nodes or edges change (only when not loading)
+  useEffect(() => {
+    if (nodes.length > 0 && edges.length >= 0 && reactFlowInstance && !isLoading) {
       setTimeout(() => {
         reactFlowInstance.fitView({ duration: 300 });
       }, 100);
     }
-  }, [nodes, edges, reactFlowInstance]);
+  }, [nodes, edges, reactFlowInstance, isLoading]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge({ 
@@ -182,23 +223,39 @@ const WorkflowBuilderInner = ({ id }) => {
     try {
       toast.loading('Saving workflow...');
       
-      // Get the current viewport
-      const viewport = reactFlowInstance.getViewport();
-      
-      // Convert React Flow format to workflow definition
-      const definition = convertReactFlowToWorkflow(nodes, edges, viewport);
+      // Use the workflowDefinition state if available (for existing workflows)
+      // Otherwise create a new definition
+      const viewport = reactFlowInstance ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+      const definition = workflowDefinition || convertReactFlowToWorkflow(nodes, edges, viewport);
       
       const workflowData = {
         name: workflowName.trim(),
         definition
       };
 
-      await dispatch(createWorkflow(workflowData)).unwrap();
-      
-      toast.success('Workflow saved successfully!');
-      setWorkflowName('');
+      // Check if we're updating an existing workflow or creating a new one
+      if (id && id !== 'new') {
+        // Update existing workflow
+        await dispatch(updateWorkflow({ id, ...workflowData })).unwrap();
+        setHasUnsavedChanges(false);
+        toast.success('Workflow updated successfully!');
+      } else {
+        // Create new workflow
+        const result = await dispatch(createWorkflow(workflowData)).unwrap();
+        
+        // If we successfully created a workflow, navigate to its detail page
+        if (result && result.id) {
+          // We don't need to navigate here as the component will handle it
+          setWorkflowDefinition(workflowData.definition);
+          setHasUnsavedChanges(false);
+          toast.success('Workflow created successfully!');
+        } else {
+          toast.success('Workflow created successfully!');
+        }
+      }
     } catch (error) {
-      toast.error(error || 'Failed to save workflow');
+      console.error('Error saving workflow:', error);
+      toast.error(error?.message || 'Failed to save workflow');
     }
   };
 
@@ -219,6 +276,16 @@ const WorkflowBuilderInner = ({ id }) => {
       
       <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
         <div className="absolute top-4 right-4 z-10 flex space-x-2">
+          {/* Show unsaved changes indicator for existing workflows */}
+          {id && id !== 'new' && hasUnsavedChanges && (
+            <div className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg flex items-center shadow-md">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
+              </svg>
+              Unsaved Changes
+            </div>
+          )}
+          
           <button 
             onClick={resetWorkflow}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
@@ -227,9 +294,14 @@ const WorkflowBuilderInner = ({ id }) => {
           </button>
           <button 
             onClick={handleSaveWorkflow}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center"
           >
-            Save
+            {id && id !== 'new' ? 'Update' : 'Save'}
+            {id && id !== 'new' && hasUnsavedChanges && (
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            )}
           </button>
           <button 
             onClick={() => {
@@ -287,10 +359,10 @@ const WorkflowBuilderInner = ({ id }) => {
   );
 };
 
-const WorkflowBuilder = ({ id }) => {
+const WorkflowBuilder = ({ id, workflowName, onWorkflowNameChange }) => {
   return (
     <ReactFlowProvider>
-      <WorkflowBuilderInner id={id} />
+      <WorkflowBuilderInner id={id} workflowName={workflowName} onWorkflowNameChange={onWorkflowNameChange} />
     </ReactFlowProvider>
   );
 };
