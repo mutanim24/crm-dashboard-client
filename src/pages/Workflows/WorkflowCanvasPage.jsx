@@ -272,8 +272,11 @@ const WorkflowCanvasPageInner = () => {
     const handleDeleteClick = (event) => {
       const deleteBtn = event.target.closest('.delete-node-btn');
       if (deleteBtn) {
+        event.preventDefault();
+        event.stopPropagation();
         const nodeId = deleteBtn.getAttribute('data-node-id');
         if (nodeId) {
+          console.log('Delete button clicked for node:', nodeId);
           handleNodeDelete(nodeId);
         }
       }
